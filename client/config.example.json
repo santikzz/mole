@@ -1,0 +1,6 @@
+{
+    "server": "myvps.com",
+    "port": 9001,
+    "subdomain": "web1",
+    "use_https": false
+}
