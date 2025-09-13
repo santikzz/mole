@@ -1,11 +1,8 @@
 package tunnel
 
 import (
-    "bytes"
-    "encoding/json"
     "fmt"
     "log"
-    "net/http"
     "net/url"
     "strings"
     
@@ -94,18 +91,23 @@ func (c *Client) Listen() error {
 }
 
 func (c *Client) handleRequest(req *Request) {
+    log.Printf("[CLIENT] Handling request %s: %s %s", req.ID, req.Method, req.URL)
+    
     resp, err := c.forwarder.Forward(req.Method, req.URL, req.Headers, req.Body)
     if err != nil {
+        log.Printf("[CLIENT] Forwarding failed for request %s: %v", req.ID, err)
         // send error response
         errorResp := &Response{
             ID:         req.ID,
-            StatusCode: 500,
+            StatusCode: 502,
             Headers:    map[string]string{"Content-Type": "text/plain"},
-            Body:       []byte(fmt.Sprintf("forwarding error: %v", err)),
+            Body:       []byte(fmt.Sprintf("Bad Gateway: %v", err)),
         }
         c.sendResponse(errorResp)
         return
     }
+    
+    log.Printf("[CLIENT] Forwarding successful for request %s: status %d", req.ID, resp.StatusCode)
     
     // convert forwarder.Response to tunnel.Response
     tunnelResp := &Response{
@@ -118,15 +120,14 @@ func (c *Client) handleRequest(req *Request) {
 }
 
 func (c *Client) sendResponse(resp *Response) {
-    // send response back via http post to avoid websocket write conflicts
-    jsonData, _ := json.Marshal(resp)
+    // send response back via websocket for proper tunneling
+    log.Printf("[CLIENT] Sending response for request %s: status %d, body size %d bytes", resp.ID, resp.StatusCode, len(resp.Body))
     
-    protocol := "http"
-    if strings.Contains(c.serverURL, "https://") || strings.Contains(c.serverURL, ":443") {
-        protocol = "https"
+    if err := c.conn.WriteJSON(resp); err != nil {
+        log.Printf("[CLIENT] Failed to send response for request %s: %v", resp.ID, err)
+    } else {
+        log.Printf("[CLIENT] Response sent successfully for request %s", resp.ID)
     }
-    responseURL := fmt.Sprintf("%s://%s/response", protocol, c.serverURL)
-    http.Post(responseURL, "application/json", bytes.NewBuffer(jsonData))
 }
 
 func (c *Client) extractDomain() string {
