@@ -14,7 +14,7 @@ services:
     networks:
       - mole-network
     env_file:
-      - path: .env
+      - .env
 
 volumes:
   letsencrypt_data:
