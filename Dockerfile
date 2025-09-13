@@ -27,6 +27,6 @@ RUN mkdir -p /etc/letsencrypt /var/lib/letsencrypt /var/log/letsencrypt
 RUN mkdir -p /var/spool/cron/crontabs
 
 # expose the port
-EXPOSE 3000
+EXPOSE 80
 
 ENTRYPOINT ["./entrypoint.sh"]

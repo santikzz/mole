@@ -1,8 +1,11 @@
 package config
 
 import (
+    "flag"
     "os"
     "strconv"
+    
+    "github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -14,6 +17,14 @@ type Config struct {
 }
 
 func Load() (*Config, error) {
+    // load .env file if it exists
+    godotenv.Load()
+    
+    // parse command line flags
+    var portFlag = flag.Int("port", 0, "server port (overrides MOLE_PORT)")
+    var domainFlag = flag.String("domain", "", "server domain (overrides MOLE_DOMAIN)")
+    flag.Parse()
+    
     cfg := &Config{}
     
     // load from environment variables
@@ -24,6 +35,14 @@ func Load() (*Config, error) {
     }
     
     cfg.Domain = os.Getenv("MOLE_DOMAIN")
+    
+    // override with command line flags if provided
+    if *portFlag != 0 {
+        cfg.Port = *portFlag
+    }
+    if *domainFlag != "" {
+        cfg.Domain = *domainFlag
+    }
     cfg.CertFile = os.Getenv("MOLE_CERT_FILE")
     cfg.KeyFile = os.Getenv("MOLE_KEY_FILE")
     

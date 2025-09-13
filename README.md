@@ -97,7 +97,7 @@ Create a configuration file:
 
 ```json
 {
-    "port": 3000,
+    "port": 80,
     "domain": "example.com",
     "use_https": true
 }
@@ -133,7 +133,7 @@ Configure the server using `.env` file:
 
 | Variable | Description | Default |
 |----------|-------------|----------|
-| `MOLE_PORT` | Server listening port | `3000` |
+| `MOLE_PORT` | Server listening port | `80` |
 | `MOLE_DOMAIN` | Base domain for tunnels | Required |
 | `MOLE_EMAIL` | Email for Let's Encrypt | Required for HTTPS |
 | `MOLE_USE_HTTPS` | Enable HTTPS with auto SSL | `false` |
@@ -144,7 +144,7 @@ Configure the server using `.env` file:
 MOLE_DOMAIN=tunnel.yourdomain.com
 MOLE_EMAIL=admin@yourdomain.com
 MOLE_USE_HTTPS=true
-MOLE_PORT=3000
+MOLE_PORT=80
 ```
 
 ### Legacy Configuration
