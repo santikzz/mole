@@ -13,65 +13,35 @@ fi
 if [ "$MOLE_USE_HTTPS" = "true" ] && [ ! -f "$MOLE_CERT_FILE" ]; then
     echo "generating ssl certificates for $MOLE_DOMAIN..."
     
-    # build domain list
+    # build domain list with main domain and subdomains
     DOMAINS="-d $MOLE_DOMAIN"
     
-    if [ "$MOLE_USE_WILDCARD" = "true" ]; then
-        echo "using wildcard certificate with DNS challenge"
-        DOMAINS="$DOMAINS -d *.$MOLE_DOMAIN"
-        
-        # create dns credentials file based on provider
-        case "$MOLE_DNS_PROVIDER" in
-            "cloudflare")
-                echo "dns_cloudflare_email = $MOLE_DNS_EMAIL" > /root/.cloudflare.ini
-                echo "dns_cloudflare_api_key = $MOLE_DNS_API_KEY" >> /root/.cloudflare.ini
-                chmod 600 /root/.cloudflare.ini
-                DNS_PLUGIN="--dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.ini"
-                ;;
-            "route53")
-                DNS_PLUGIN="--dns-route53"
-                ;;
-            "digitalocean")
-                echo "dns_digitalocean_token = $DO_AUTH_TOKEN" > /root/.digitalocean.ini
-                chmod 600 /root/.digitalocean.ini
-                DNS_PLUGIN="--dns-digitalocean --dns-digitalocean-credentials /root/.digitalocean.ini"
-                ;;
-            *)
-                echo "unsupported dns provider: $MOLE_DNS_PROVIDER"
-                echo "falling back to standalone mode without wildcard"
-                DOMAINS="-d $MOLE_DOMAIN"
-                DNS_PLUGIN="--standalone"
-                ;;
-        esac
-        
-        certbot certonly $DNS_PLUGIN \
-            $DOMAINS \
-            --email "$MOLE_EMAIL" \
-            --agree-tos \
-            --non-interactive \
-            --expand
-    else
-        echo "using specific subdomains with HTTP challenge"
-        
-        # add specific subdomains from list
-        if [ -n "$MOLE_SUBDOMAINS" ]; then
-            IFS=','
-            for subdomain in $MOLE_SUBDOMAINS; do
-                DOMAINS="$DOMAINS -d $subdomain.$MOLE_DOMAIN"
-            done
-            unset IFS
-        fi
-        
-        certbot certonly --standalone \
-            $DOMAINS \
-            --email "$MOLE_EMAIL" \
-            --agree-tos \
-            --non-interactive \
-            --expand
+    # add specific subdomains from list
+    if [ -n "$MOLE_SUBDOMAINS" ]; then
+        IFS=','
+        for subdomain in $MOLE_SUBDOMAINS; do
+            DOMAINS="$DOMAINS -d $subdomain.$MOLE_DOMAIN"
+        done
+        unset IFS
     fi
+    
+    echo "requesting certificates for domains: $DOMAINS"
+    echo "note: certbot will temporarily use port 80 for verification"
+    
+    # use standalone mode with specific port to avoid conflicts
+    certbot certonly --standalone \
+        --preferred-challenges http \
+        --http-01-port 80 \
+        $DOMAINS \
+        --email "$MOLE_EMAIL" \
+        --agree-tos \
+        --non-interactive \
+        --expand
     
     if [ $? -eq 0 ]; then
         echo "certificates generated successfully"
+        echo "certificate files should be at: $MOLE_CERT_FILE"
+        ls -la /etc/letsencrypt/live/$MOLE_DOMAIN/ || echo "certificate directory not found"
     else
         echo "failed to generate certificates, starting without https"
         export MOLE_USE_HTTPS=false

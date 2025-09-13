@@ -8,9 +8,8 @@ RUN cd server && go build -o mole-server -ldflags="-w -s" .
 
 FROM alpine:latest
 
-# install ca-certificates, certbot with dns plugins, and dcron for ssl and cron jobs
-RUN apk --no-cache add ca-certificates tzdata certbot dcron py3-pip \
-    && pip3 install --break-system-packages --root-user-action certbot-dns-cloudflare certbot-dns-route53 certbot-dns-digitalocean
+# install ca-certificates, certbot, and dcron for ssl and cron jobs
+RUN apk --no-cache add ca-certificates tzdata certbot dcron
 
 WORKDIR /root/
 

@@ -1,5 +1,6 @@
 services:
   mole-server:
+    container_name: mole-server
     build: .
     ports:
       - "${MOLE_PORT:-80}:80"
