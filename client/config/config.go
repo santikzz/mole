@@ -50,7 +50,7 @@ func Load() (*Config, *string, *int, error) {
         cfg.Server = "localhost"
     }
     if cfg.Port == 0 {
-        cfg.Port = 3000
+        cfg.Port = 80
     }
     
     return cfg, subdomain, localPort, nil

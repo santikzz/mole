@@ -2,7 +2,7 @@ services:
   mole-server:
     build: .
     ports:
-      - "${MOLE_PORT:-80}:80"
+      - "${MOLE_PORT:-9001}:80"
     volumes:
       - letsencrypt_data:/var/lib/letsencrypt
       - letsencrypt_logs:/var/log/letsencrypt  

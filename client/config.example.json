@@ -1,6 +1,6 @@
 {
     "server": "mole.nebulasolutions.com.ar",
-    "port": 3000,
+    "port": 80,
     "subdomain": "myapp",
     "use_https": true
 }

@@ -52,7 +52,7 @@ func Load() (*Config, error) {
     
     // set defaults
     if cfg.Port == 0 {
-        cfg.Port = 3000
+        cfg.Port = 80
     }
     if cfg.Domain == "" {
         cfg.Domain = "localhost"

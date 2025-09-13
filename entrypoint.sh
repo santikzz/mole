@@ -41,4 +41,4 @@ mkdir -p /var/log
 
 # start the mole server with logging
 echo "Starting mole server with logging to /var/log/mole.log"
-exec "./mole-server" 2>&1 | tee /var/log/mole.log
+exec "./mole-server" --port 80 2>&1 | tee /var/log/mole.log
