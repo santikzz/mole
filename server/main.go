@@ -62,7 +62,7 @@ func main() {
             return
         }
         
-        log.Printf("[RESPONSE] Handling response for request ID: %s", resp.RequestID)
+        log.Printf("[RESPONSE] Handling response for request ID: %s", resp.ID)
         handler.HandleResponse(&resp)
         w.WriteHeader(http.StatusOK)
     }))

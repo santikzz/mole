@@ -4,7 +4,7 @@ services:
   mole-server:
     build: .
     ports:
-      - "3000:3000"
+      - "${MOLE_PORT:-3000}:3000"
     volumes:
       - letsencrypt_data:/var/lib/letsencrypt
       - letsencrypt_logs:/var/log/letsencrypt  
