@@ -1,49 +1,35 @@
 package config
 
 import (
-    "encoding/json"
-    "flag"
     "os"
+    "strconv"
 )
 
 type Config struct {
-    Port     int    `json:"port"`
-    Domain   string `json:"domain"`
-    CertFile string `json:"cert_file"`
-    KeyFile  string `json:"key_file"`
-    UseHTTPS bool   `json:"use_https"`
+    Port     int
+    Domain   string
+    CertFile string
+    KeyFile  string
+    UseHTTPS bool
 }
 
 func Load() (*Config, error) {
+    cfg := &Config{}
     
-	cfg := &Config{}
-    
-    // load from config file first
-    if data, err := os.ReadFile("config.json"); err == nil {
-        json.Unmarshal(data, cfg)
+    // load from environment variables
+    if port := os.Getenv("MOLE_PORT"); port != "" {
+        if p, err := strconv.Atoi(port); err == nil {
+            cfg.Port = p
+        }
     }
     
-    // override with command line flags
-    port     := flag.Int("port", cfg.Port, "server port")
-    domain   := flag.String("domain", cfg.Domain, "server domain")
-    certFile := flag.String("cert", cfg.CertFile, "ssl certificate file")
-    keyFile  := flag.String("key", cfg.KeyFile, "ssl key file")
-    useHTTPS := flag.Bool("https", cfg.UseHTTPS, "use https")
-    flag.Parse()
+    cfg.Domain = os.Getenv("MOLE_DOMAIN")
+    cfg.CertFile = os.Getenv("MOLE_CERT_FILE")
+    cfg.KeyFile = os.Getenv("MOLE_KEY_FILE")
     
-    if *port != 0 {
-        cfg.Port = *port
+    if https := os.Getenv("MOLE_USE_HTTPS"); https == "true" {
+        cfg.UseHTTPS = true
     }
-    if *domain != "" {
-        cfg.Domain = *domain
-    }
-    if *certFile != "" {
-        cfg.CertFile = *certFile
-    }
-    if *keyFile != "" {
-        cfg.KeyFile = *keyFile
-    }
-    cfg.UseHTTPS = *useHTTPS
     
     // set defaults
     if cfg.Port == 0 {
@@ -51,6 +37,14 @@ func Load() (*Config, error) {
     }
     if cfg.Domain == "" {
         cfg.Domain = "localhost"
+    }
+    
+    // automatically set certificate paths if HTTPS is enabled but paths not specified
+    if cfg.UseHTTPS && cfg.CertFile == "" {
+        cfg.CertFile = "/etc/letsencrypt/live/" + cfg.Domain + "/fullchain.pem"
+    }
+    if cfg.UseHTTPS && cfg.KeyFile == "" {
+        cfg.KeyFile = "/etc/letsencrypt/live/" + cfg.Domain + "/privkey.pem"
     }
     
     return cfg, nil

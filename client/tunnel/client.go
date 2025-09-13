@@ -45,7 +45,11 @@ func NewClient(serverURL, subdomain string, forwarder *forwarder.Forwarder) *Cli
 }
 
 func (c *Client) Connect() error {
-    u := url.URL{Scheme: "ws", Host: c.serverURL, Path: "/tunnel"}
+    scheme := "ws"
+    if strings.Contains(c.serverURL, "https://") || strings.Contains(c.serverURL, ":443") {
+        scheme = "wss"
+    }
+    u := url.URL{Scheme: scheme, Host: c.serverURL, Path: "/tunnel"}
     
     var err error
     c.conn, _, err = websocket.DefaultDialer.Dial(u.String(), nil)
@@ -117,7 +121,11 @@ func (c *Client) sendResponse(resp *Response) {
     // send response back via http post to avoid websocket write conflicts
     jsonData, _ := json.Marshal(resp)
     
-    responseURL := fmt.Sprintf("http://%s/response", c.serverURL)
+    protocol := "http"
+    if strings.Contains(c.serverURL, "https://") || strings.Contains(c.serverURL, ":443") {
+        protocol = "https"
+    }
+    responseURL := fmt.Sprintf("%s://%s/response", protocol, c.serverURL)
     http.Post(responseURL, "application/json", bytes.NewBuffer(jsonData))
 }
 

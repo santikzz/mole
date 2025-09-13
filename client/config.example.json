@@ -1,6 +1,6 @@
 {
-    "server": "myvps.com",
-    "port": 9001,
-    "subdomain": "web1",
-    "use_https": false
+    "server": "mole.nebulasolutions.com.ar",
+    "port": 3000,
+    "subdomain": "myapp",
+    "use_https": true
 }

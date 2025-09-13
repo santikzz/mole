@@ -10,7 +10,9 @@ A free, open-source tunneling solution that provides secure HTTP/HTTPS tunnels f
 ## Features
 
 - **Custom Domain Support** - Use your own domains and subdomains
-- **HTTP/HTTPS Support** - Full SSL/TLS encryption with Let's Encrypt integration
+- **Automatic SSL** - Let's Encrypt integration with auto-renewal
+- **Docker Ready** - One-command deployment with Docker Compose
+- **Verbose Logging** - Comprehensive request/response logging to `mole.log`
 - **Self-Hosted** - Complete control over your tunneling infrastructure
 - **Lightweight** - Written in Go for optimal performance
 - **Cross-Platform** - Runs on Linux, macOS, and Windows
@@ -23,21 +25,48 @@ Mole is currently in active development. While functional, it should be consider
 
 ### Prerequisites
 
-- Go 1.19 or higher
+- Docker and Docker Compose
 - A server with a public IP address
 - Domain name with DNS access
 
-### Building from Source
+### Docker Deployment (Recommended)
 
-Clone the repository and build the binaries:
+Clone the repository:
 
 ```bash
-git clone https://github.com/your-username/mole.git
+git clone https://github.com/santikzz/mole.git
 cd mole
+```
+
+Copy and configure environment variables:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your settings:
+
+```bash
+MOLE_DOMAIN=yourdomain.com
+MOLE_EMAIL=your@email.com
+MOLE_USE_HTTPS=true
+```
+
+Start the server:
+
+```bash
+docker-compose up -d
+```
+
+### Building from Source
+
+For development or custom builds:
+
+```bash
 make all
 ```
 
-This creates two binaries in the `bin/` directory:
+This creates binaries in the `bin/` directory:
 - `mole-server` - The tunnel server
 - `mole` - The client application
 
@@ -45,14 +74,31 @@ This creates two binaries in the `bin/` directory:
 
 ### 1. Server Setup
 
-Create a configuration file on your server:
+**Docker (Recommended)**:
+
+```bash
+# Clone and configure
+git clone https://github.com/santikzz/mole.git
+cd mole
+cp .env.example .env
+
+# Edit .env with your domain and email
+echo "MOLE_DOMAIN=yourdomain.com" > .env
+echo "MOLE_EMAIL=your@email.com" >> .env
+echo "MOLE_USE_HTTPS=true" >> .env
+
+# Start server with automatic SSL
+docker-compose up -d
+```
+
+**Manual Build**:
+
+Create a configuration file:
 
 ```json
 {
     "port": 3000,
     "domain": "example.com",
-    "cert_file": "/etc/letsencrypt/live/example.com/fullchain.pem",
-    "key_file": "/etc/letsencrypt/live/example.com/privkey.pem",
     "use_https": true
 }
 ```
@@ -81,41 +127,100 @@ This makes your local service available at `myapp.example.com`.
 
 ## Configuration
 
-### Server Configuration
+### Environment Variables
 
-The server can be configured via `config.json` or command-line flags:
+Configure the server using `.env` file:
 
-| Option | Flag | Description |
-|--------|------|-------------|
-| `port` | `-port` | Server listening port |
-| `domain` | `-domain` | Base domain for tunnels |
-| `use_https` | `-https` | Enable HTTPS support |
-| `cert_file` | `-cert` | Path to SSL certificate |
-| `key_file` | `-key` | Path to SSL private key |
+| Variable | Description | Default |
+|----------|-------------|----------|
+| `MOLE_PORT` | Server listening port | `3000` |
+| `MOLE_DOMAIN` | Base domain for tunnels | Required |
+| `MOLE_EMAIL` | Email for Let's Encrypt | Required for HTTPS |
+| `MOLE_USE_HTTPS` | Enable HTTPS with auto SSL | `false` |
 
-**Example with command-line flags:**
+**Example `.env`:**
 
 ```bash
-./bin/mole-server -port 8080 -domain mydomain.com -https -cert /path/cert.pem -key /path/key.pem
+MOLE_DOMAIN=tunnel.yourdomain.com
+MOLE_EMAIL=admin@yourdomain.com
+MOLE_USE_HTTPS=true
+MOLE_PORT=3000
 ```
 
-### SSL Certificate Setup
+### Legacy Configuration
 
-#### Using Let's Encrypt (Recommended)
+For manual builds, use `config.json` or command-line flags:
 
-Install certbot:
+```bash
+./bin/mole-server -port 8080 -domain mydomain.com -https
+```
+
+### SSL Certificate Management
+
+#### Automatic SSL (Docker - Recommended)
+
+When using Docker with `MOLE_USE_HTTPS=true`, SSL certificates are automatically:
+- **Generated** using Let's Encrypt on first startup
+- **Renewed** automatically via cron job
+- **Managed** internally with persistent volumes
+
+No manual certificate setup required!
+
+#### Manual SSL Setup
+
+For manual deployments, install certbot:
 
 ```bash
 sudo apt install certbot
 ```
 
-Obtain certificates for your domain and wildcard subdomain:
+Obtain certificates:
 
 ```bash
 sudo certbot certonly --manual --preferred-challenges dns -d example.com -d *.example.com
 ```
 
-Certificates will be stored in `/etc/letsencrypt/live/example.com/`. Update your server configuration with the paths to `fullchain.pem` and `privkey.pem`.
+Certificates are automatically detected at `/etc/letsencrypt/live/example.com/`.
+
+## Logging and Monitoring
+
+### Verbose Logging
+
+The server provides comprehensive logging for debugging and monitoring:
+
+- **Request Logging**: All HTTP requests with method, path, client IP, and user agent
+- **Response Tracking**: Request duration and completion status
+- **Error Logging**: Detailed error messages for failed requests
+- **WebSocket Events**: Tunnel connection and disconnection events
+
+### Log File Access
+
+**Docker Deployment**:
+Logs are automatically saved to `mole.log` and persisted in Docker volumes:
+
+```bash
+# View live logs
+docker-compose logs -f mole-server
+
+# Access log file directly
+docker exec -it mole_mole-server_1 tail -f /var/log/mole.log
+```
+
+**Manual Deployment**:
+Logs are output to stdout/stderr and can be redirected:
+
+```bash
+./bin/mole-server > mole.log 2>&1
+```
+
+### Log Format Example
+
+```
+[REQUEST] GET /tunnel from 172.17.0.1:45678 - User-Agent: Mozilla/5.0...
+[RESPONSE] GET /tunnel completed in 1.2ms
+[ERROR] Invalid method GET for /response endpoint
+[RESPONSE] Handling response for request ID: abc123
+```
 
 ## DNS Configuration
 

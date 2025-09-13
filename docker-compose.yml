@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  mole-server:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - letsencrypt_data:/var/lib/letsencrypt
+      - letsencrypt_logs:/var/log/letsencrypt  
+      - letsencrypt_certs:/etc/letsencrypt
+      - mole_logs:/var/log
+    restart: unless-stopped
+    networks:
+      - mole-network
+
+volumes:
+  letsencrypt_data:
+  letsencrypt_logs:
+  letsencrypt_certs:
+  mole_logs:
+
+networks:
+  mole-network:
+    driver: bridge

@@ -54,7 +54,11 @@ func main() {
     }
     defer client.Close()
     
-    log.Printf("forwarding http://localhost:%d to %s.%s", localPort, subdomain, cfg.Server)
+    protocol := "http"
+    if cfg.UseHTTPS {
+        protocol = "https"
+    }
+    log.Printf("forwarding http://localhost:%d to %s://%s.%s", localPort, protocol, subdomain, cfg.Server)
     
     // handle shutdown gracefully
     c := make(chan os.Signal, 1)
